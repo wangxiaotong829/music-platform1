@@ -1,0 +1,1860 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>听见你的声音·音乐制作人交流平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ==================== 已为你配置好的Supabase云端配置 ====================
+        const SUPABASE_URL = 'https://fhydtrtfomgjfobsyaup.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_d1bWLFbm-JTFJV2yuptVfg_qSvCG6z4';
+        // ======================================================================
+        
+        // 初始化Supabase客户端
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#60A5FA', // 浅蓝 专业
+                        secondary: '#FBBF24', // 暖黄 灵感
+                        dark: '#374151', // 高级灰
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .text-gradient {
+                background-clip: text;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark font-sans">
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center cursor-pointer" onclick="showPage('home')">
+                    <i class="fa fa-headphones text-primary text-2xl mr-2"></i>
+                    <span class="font-bold text-xl hidden sm:block">听见你的声音</span>
+                    <span class="font-bold text-xl sm:hidden">音创平台</span>
+                </div>
+
+                <!-- 搜索框 -->
+                <div class="hidden md:flex flex-1 max-w-md mx-8">
+                    <div class="relative w-full">
+                        <input type="text" id="searchInput" placeholder="搜索作品、制作人..." class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                        <i class="fa fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- 导航链接 -->
+                <div class="flex items-center space-x-4">
+                    <button onclick="showPage('home')" class="hidden md:block text-gray-600 hover:text-primary transition-colors">首页</button>
+                    <button onclick="showPage('upload')" class="hidden md:block text-gray-600 hover:text-primary transition-colors">上传作品</button>
+                    <button onclick="showPage('ranking')" class="hidden md:block text-gray-600 hover:text-primary transition-colors">创作之星</button>
+                    
+                    <!-- 用户区域 -->
+                    <div id="userArea" class="flex items-center">
+                        <!-- 未登录状态 -->
+                        <div id="guestButtons">
+                            <button onclick="showModal('loginModal')" class="px-4 py-2 text-primary hover:bg-primary/5 rounded-lg transition-colors">登录</button>
+                            <button onclick="showModal('registerModal')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">注册</button>
+                        </div>
+                        <!-- 登录后状态 -->
+                        <div id="userMenu" class="hidden relative">
+                            <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 focus:outline-none">
+                                <img id="navUserAvatar" src="https://aka.doubaocdn.com/s/2Pjs1wGJ9Q" alt="头像" class="w-8 h-8 rounded-full object-cover">
+                                <span id="navUserName" class="hidden sm:block text-sm font-medium">用户</span>
+                                <i class="fa fa-caret-down text-gray-400"></i>
+                            </button>
+                            <!-- 下拉菜单 -->
+                            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                                <a href="#" onclick="showPage('profile')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">制作人中心</a>
+                                <a href="#" onclick="showPage('myWorks')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">我的作品</a>
+                                <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 移动端菜单按钮 -->
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-gray-600">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 移动端菜单 -->
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t">
+            <div class="px-4 py-3 space-y-3">
+                <div class="relative">
+                    <input type="text" placeholder="搜索作品、制作人..." class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <i class="fa fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <button onclick="showPage('home'); toggleMobileMenu();" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">首页</button>
+                <button onclick="showPage('upload'); toggleMobileMenu();" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">上传作品</button>
+                <button onclick="showPage('ranking'); toggleMobileMenu();" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">创作之星</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="pt-16">
+        <!-- 首页 -->
+        <section id="homePage" class="page-section">
+            <!-- Banner -->
+            <div class="relative h-80 sm:h-96 overflow-hidden">
+                <img src="https://aka.doubaocdn.com/s/HKml1wGJ9Q" alt="Banner" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-r from-dark/70 to-transparent flex items-center">
+                    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="max-w-xl">
+                            <h1 class="text-3xl sm:text-4xl font-bold text-white mb-4">听见你的声音</h1>
+                            <p class="text-lg text-white/90 mb-6">为音乐制作人打造的专属交流平台，分享作品，碰撞灵感，共同成长</p>
+                            <button onclick="showPage('upload')" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all transform hover:scale-105">
+                                <i class="fa fa-upload mr-2"></i>上传你的作品
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分类导航 -->
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="flex overflow-x-auto scrollbar-hide space-x-4 pb-2">
+                    <button onclick="filterWorks('all')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-primary text-white">全部作品</button>
+                    <button onclick="filterWorks('original')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">原创编曲</button>
+                    <button onclick="filterWorks('cover')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">翻唱改编</button>
+                    <button onclick="filterWorks('demo')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">Demo展示</button>
+                    <button onclick="filterWorks('behind')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">制作花絮</button>
+                    <button onclick="filterWorks('mix')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">混音作品</button>
+                    <button onclick="filterWorks('instrument')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">乐器演奏</button>
+                </div>
+            </div>
+
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- 作品列表 -->
+                    <div class="lg:col-span-2">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold">最新上传</h2>
+                            <div class="flex space-x-2">
+                                <button onclick="sortWorks('newest')" class="sort-btn px-3 py-1 text-sm rounded-full bg-primary text-white">最新</button>
+                                <button onclick="sortWorks('hot')" class="sort-btn px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600">最热</button>
+                                <button onclick="sortWorks('comment')" class="sort-btn px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600">最多交流</button>
+                            </div>
+                        </div>
+
+                        <div id="worksGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <!-- 作品卡片会通过JS动态生成 -->
+                        </div>
+
+                        <div id="emptyWorks" class="hidden text-center py-12">
+                            <i class="fa fa-music text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">还没有作品，快来上传第一个作品吧！</p>
+                            <button onclick="showPage('upload')" class="mt-4 px-4 py-2 bg-primary text-white rounded-lg">上传作品</button>
+                        </div>
+                    </div>
+
+                    <!-- 排行榜侧边栏 -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-xl shadow-sm p-6 sticky top-20">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-bold">本周创作之星</h2>
+                                <button onclick="showPage('ranking')" class="text-primary text-sm hover:underline">查看完整榜单</button>
+                            </div>
+
+                            <div id="rankingPreview" class="space-y-4">
+                                <!-- 排行榜预览会通过JS动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 上传作品页面 -->
+        <section id="uploadPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-3xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-2">上传作品</h1>
+                    <p class="text-gray-500 mb-8">分享你的音乐作品，与制作人同行交流创作心得</p>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+                        <!-- 上传区域 -->
+                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer mb-8">
+                            <input type="file" id="fileInput" multiple accept="audio/*,video/*,.logic,.cubase,.project" class="hidden">
+                            <i class="fa fa-cloud-upload text-5xl text-gray-400 mb-4"></i>
+                            <p class="text-lg text-gray-600 mb-2">拖拽文件到此处，或点击选择文件</p>
+                            <p class="text-sm text-gray-400">支持 mp3, wav, flac, mp4, mov, 以及工程文件片段</p>
+                            <div id="uploadProgress" class="hidden mt-4">
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="progressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <p id="progressText" class="text-sm text-gray-500 mt-1">上传中... 0%</p>
+                            </div>
+                            <div id="selectedFiles" class="hidden mt-4 text-left">
+                                <h4 class="font-medium mb-2">已选择文件：</h4>
+                                <ul id="fileList" class="space-y-2"></ul>
+                            </div>
+                        </div>
+
+                        <!-- 作品信息表单 -->
+                        <form id="uploadForm" class="space-y-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">作品名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="workName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">制作人名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="producerName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">作品分类 <span class="text-red-500">*</span></label>
+                                    <select id="workCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                        <option value="">请选择分类</option>
+                                        <option value="original">原创编曲</option>
+                                        <option value="cover">翻唱改编</option>
+                                        <option value="demo">Demo展示</option>
+                                        <option value="behind">制作花絮</option>
+                                        <option value="mix">混音作品</option>
+                                        <option value="instrument">乐器演奏</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">作品状态</label>
+                                    <select id="workStatus" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                        <option value="finished">成品版</option>
+                                        <option value="demo">Demo版</option>
+                                        <option value="unfinished">未完成版</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">作品封面</label>
+                                <div class="flex items-center space-x-4">
+                                    <img id="coverPreview" src="https://aka.doubaocdn.com/s/ygh51wGJ9P" alt="封面预览" class="w-20 h-20 rounded-lg object-cover">
+                                    <input type="file" id="coverInput" accept="image/*" class="hidden" onchange="previewCover(this)">
+                                    <button type="button" onclick="document.getElementById('coverInput').click()" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fa fa-image mr-2"></i>选择封面
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">创作灵感/制作思路 <span class="text-red-500">*</span></label>
+                                <textarea id="workInspiration" rows="3" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="分享你创作这个作品的灵感来源，或者制作过程中的想法..."></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">使用乐器</label>
+                                    <input type="text" id="workInstruments" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="如：钢琴、吉他、鼓...">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">制作软件</label>
+                                    <input type="text" id="workSoftware" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="如：Logic Pro, Cubase, FL Studio...">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">制作亮点</label>
+                                <textarea id="workHighlights" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary" placeholder="这个作品有什么特别的编曲技巧、混音亮点？分享给其他制作人学习..."></textarea>
+                            </div>
+
+                            <div class="flex items-center">
+                                <input type="checkbox" id="workPublic" checked class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                <label for="workPublic" class="ml-2 text-sm text-gray-700">公开作品（所有人可见），取消则仅自己可见</label>
+                            </div>
+
+                            <div class="flex justify-end space-x-4">
+                                <button type="button" onclick="showPage('home')" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">取消</button>
+                                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                                    <i class="fa fa-upload mr-2"></i>提交作品
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 作品详情页面 -->
+        <section id="workDetailPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <button onclick="goBack()" class="flex items-center text-gray-600 hover:text-primary mb-6 transition-colors">
+                        <i class="fa fa-arrow-left mr-2"></i>返回
+                    </button>
+
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-6 sm:p-8">
+                            <div class="flex flex-col md:flex-row gap-8">
+                                <!-- 封面 -->
+                                <div class="flex-shrink-0">
+                                    <img id="detailCover" src="https://aka.doubaocdn.com/s/ygh51wGJ9P" alt="作品封面" class="w-full md:w-64 h-64 object-cover rounded-xl shadow-md">
+                                </div>
+
+                                <!-- 作品信息 -->
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span id="detailStatusBadge" class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">成品版</span>
+                                        <span id="detailCategoryBadge" class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">原创编曲</span>
+                                    </div>
+                                    <h1 id="detailTitle" class="text-2xl sm:text-3xl font-bold mb-2">作品名称</h1>
+                                    
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <img id="detailProducerAvatar" src="https://aka.doubaocdn.com/s/2Pjs1wGJ9Q" alt="制作人头像" class="w-10 h-10 rounded-full">
+                                        <div>
+                                            <p id="detailProducerName" class="font-medium">制作人名称</p>
+                                            <p id="detailProducerSkill" class="text-sm text-gray-500">擅长：编曲</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <span><i class="fa fa-play mr-1"></i><span id="detailPlayCount">0</span> 次播放</span>
+                                        <span><i class="fa fa-comment mr-1"></i><span id="detailCommentCount">0</span> 条留言</span>
+                                        <span><i class="fa fa-heart mr-1"></i><span id="detailLikeCount">0</span> 次赞赏</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 播放器 -->
+                            <div class="mt-8">
+                                <div id="audioPlayerContainer" class="hidden">
+                                    <audio id="audioPlayer" class="w-full" controls></audio>
+                                </div>
+                                <div id="videoPlayerContainer" class="hidden">
+                                    <video id="videoPlayer" class="w-full rounded-lg" controls></video>
+                                </div>
+                            </div>
+
+                            <!-- 作品详情标签页 -->
+                            <div class="mt-8 border-b border-gray-200">
+                                <nav class="flex space-x-8">
+                                    <button onclick="switchDetailTab('info')" class="detail-tab-btn py-4 px-1 border-b-2 border-primary text-primary font-medium">作品详情</button>
+                                    <button onclick="switchDetailTab('comments')" class="detail-tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">留言交流</button>
+                                </nav>
+                            </div>
+
+                            <!-- 作品详情内容 -->
+                            <div id="detailInfoTab" class="py-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 mb-2">创作灵感</h3>
+                                        <p id="detailInspiration" class="text-gray-600">创作灵感内容</p>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 mb-2">制作亮点</h3>
+                                        <p id="detailHighlights" class="text-gray-600">制作亮点内容</p>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 mb-2">使用乐器</h3>
+                                        <p id="detailInstruments" class="text-gray-600">乐器列表</p>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 mb-2">制作软件</h3>
+                                        <p id="detailSoftware" class="text-gray-600">软件列表</p>
+                                    </div>
+                                </div>
+
+                                <!-- 互动按钮 -->
+                                <div class="mt-8 flex flex-wrap gap-4">
+                                    <button onclick="likeWork()" class="flex items-center gap-2 px-6 py-3 bg-secondary/10 text-secondary rounded-lg hover:bg-secondary/20 transition-colors">
+                                        <i class="fa fa-heart"></i>
+                                        <span>一键赞赏</span>
+                                    </button>
+                                    <button onclick="collectWork()" class="flex items-center gap-2 px-6 py-3 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
+                                        <i class="fa fa-bookmark"></i>
+                                        <span>收藏作品</span>
+                                    </button>
+                                    <button onclick="initiateCollab()" class="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                                        <i class="fa fa-handshake-o"></i>
+                                        <span>灵感合拍</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 留言交流内容 -->
+                            <div id="detailCommentsTab" class="py-6 hidden">
+                                <!-- 留言输入 -->
+                                <div id="commentInputArea" class="mb-8">
+                                    <textarea id="newComment" rows="3" placeholder="分享你对这个作品的看法，或者和制作人交流制作技巧..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"></textarea>
+                                    <div class="flex justify-end mt-2">
+                                        <button onclick="submitComment()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                                            发布留言
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 留言筛选 -->
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="font-medium">全部留言 (<span id="totalComments">0</span>)</h3>
+                                    <div class="flex items-center gap-2">
+                                        <select id="commentFilter" onchange="filterComments()" class="text-sm border border-gray-300 rounded-lg px-3 py-1">
+                                            <option value="newest">最新</option>
+                                            <option value="hot">最热</option>
+                                        </select>
+                                        <input type="text" id="commentSearch" placeholder="搜索留言" class="text-sm border border-gray-300 rounded-lg px-3 py-1 w-32">
+                                    </div>
+                                </div>
+
+                                <!-- 留言列表 -->
+                                <div id="commentsList" class="space-y-6">
+                                    <!-- 留言会通过JS动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 相关作品推荐 -->
+                    <div class="mt-12">
+                        <h2 class="text-xl font-bold mb-6">相关作品推荐</h2>
+                        <div id="relatedWorks" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <!-- 相关作品会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 排行榜页面 -->
+        <section id="rankingPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 class="text-3xl font-bold mb-2">创作之星排行榜</h1>
+                            <p class="text-gray-500">每周一0点更新，综合播放、留言、赞赏数据评选</p>
+                        </div>
+                        <div class="flex bg-gray-100 rounded-lg p-1">
+                            <button onclick="switchRankingTab('current')" class="ranking-tab-btn px-4 py-2 rounded-lg bg-primary text-white">本周榜单</button>
+                            <button onclick="switchRankingTab('last')" class="ranking-tab-btn px-4 py-2 rounded-lg text-gray-600">上周榜单</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-6">
+                            <div id="rankingList" class="space-y-4">
+                                <!-- 排行榜列表会通过JS动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 个人中心页面 -->
+        <section id="profilePage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-8">制作人中心</h1>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <!-- 个人信息卡片 -->
+                        <div class="md:col-span-1">
+                            <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                                <img id="profileAvatar" src="https://aka.doubaocdn.com/s/2Pjs1wGJ9Q" alt="头像" class="w-24 h-24 rounded-full mx-auto mb-4 object-cover">
+                                <h2 id="profileName" class="text-xl font-bold mb-1">制作人名称</h2>
+                                <p id="profileSkill" class="text-gray-500 text-sm mb-4">擅长：编曲、混音</p>
+                                
+                                <div class="flex justify-center gap-6 text-center mb-6">
+                                    <div>
+                                        <p id="profileWorksCount" class="text-2xl font-bold text-primary">0</p>
+                                        <p class="text-xs text-gray-500">作品数</p>
+                                    </div>
+                                    <div>
+                                        <p id="profileFansCount" class="text-2xl font-bold text-primary">0</p>
+                                        <p class="text-xs text-gray-500">粉丝数</p>
+                                    </div>
+                                    <div>
+                                        <p id="profilePlayCount" class="text-2xl font-bold text-primary">0</p>
+                                        <p class="text-xs text-gray-500">总播放</p>
+                                    </div>
+                                </div>
+
+                                <button onclick="editProfile()" class="w-full px-4 py-2 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors">
+                                    编辑资料
+                                </button>
+                            </div>
+
+                            <!-- 侧边导航 -->
+                            <div class="bg-white rounded-xl shadow-sm mt-6 p-4">
+                                <nav class="space-y-1">
+                                    <button onclick="showProfileTab('works')" class="profile-tab-btn w-full text-left px-4 py-2 rounded-lg bg-primary/10 text-primary">我的作品</button>
+                                    <button onclick="showProfileTab('collections')" class="profile-tab-btn w-full text-left px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">我的收藏</button>
+                                    <button onclick="showProfileTab('playlists')" class="profile-tab-btn w-full text-left px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">我的歌单</button>
+                                    <button onclick="showProfileTab('comments')" class="profile-tab-btn w-full text-left px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">我的留言</button>
+                                </nav>
+                            </div>
+                        </div>
+
+                        <!-- 内容区域 -->
+                        <div class="md:col-span-2">
+                            <div id="profileWorksTab" class="profile-content">
+                                <div class="bg-white rounded-xl shadow-sm p-6">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h3 class="text-lg font-bold">我的作品</h3>
+                                        <button onclick="showPage('upload')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                                            <i class="fa fa-plus mr-1"></i>上传新作品
+                                        </button>
+                                    </div>
+
+                                    <div id="myWorksList" class="space-y-4">
+                                        <!-- 我的作品会通过JS动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="profileCollectionsTab" class="profile-content hidden">
+                                <div class="bg-white rounded-xl shadow-sm p-6">
+                                    <h3 class="text-lg font-bold mb-6">我的收藏</h3>
+                                    <div id="myCollectionsList" class="grid grid-cols-2 gap-4">
+                                        <!-- 收藏的作品会通过JS动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="profilePlaylistsTab" class="profile-content hidden">
+                                <div class="bg-white rounded-xl shadow-sm p-6">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h3 class="text-lg font-bold">我的歌单</h3>
+                                        <button onclick="createPlaylist()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm">
+                                            <i class="fa fa-plus mr-1"></i>新建歌单
+                                        </button>
+                                    </div>
+
+                                    <div id="myPlaylistsList" class="grid grid-cols-2 gap-4">
+                                        <!-- 歌单会通过JS动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="profileCommentsTab" class="profile-content hidden">
+                                <div class="bg-white rounded-xl shadow-sm p-6">
+                                    <h3 class="text-lg font-bold mb-6">我的留言</h3>
+                                    <div id="myCommentsList" class="space-y-4">
+                                        <!-- 我的留言会通过JS动态生成 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 我的作品页面 -->
+        <section id="myWorksPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <h1 class="text-3xl font-bold">我的作品</h1>
+                        <button onclick="showPage('upload')" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                            <i class="fa fa-upload mr-2"></i>上传新作品
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div id="allMyWorksList" class="divide-y">
+                            <!-- 所有我的作品会通过JS动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 登录弹窗 -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">登录</h2>
+                <button onclick="hideModal('loginModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">账号/邮箱</label>
+                    <input type="text" id="loginAccount" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="loginPassword" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded">
+                        <span class="ml-2 text-sm text-gray-600">记住我</span>
+                    </label>
+                    <a href="#" class="text-sm text-primary hover:underline">忘记密码？</a>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    登录
+                </button>
+            </form>
+
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">或者使用</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-3 gap-3">
+                    <button class="flex justify-center py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-weixin text-green-500"></i>
+                    </button>
+                    <button class="flex justify-center py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-qq text-blue-500"></i>
+                    </button>
+                    <button class="flex justify-center py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <i class="fa fa-weibo text-red-500"></i>
+                    </button>
+                </div>
+            </div>
+
+            <p class="mt-6 text-center text-sm text-gray-600">
+                还没有账号？
+                <button onclick="hideModal('loginModal'); showModal('registerModal');" class="text-primary hover:underline">立即注册</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- 注册弹窗 -->
+    <div id="registerModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">注册</h2>
+                <button onclick="hideModal('registerModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="registerForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">制作人昵称 <span class="text-red-500">*</span></label>
+                    <input type="text" id="registerNickname" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">邮箱 <span class="text-red-500">*</span></label>
+                    <input type="email" id="registerEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码 <span class="text-red-500">*</span></label>
+                    <input type="password" id="registerPassword" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">擅长领域</label>
+                    <select id="registerSkill" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                        <option value="">请选择你的擅长领域</option>
+                        <option value="编曲">编曲</option>
+                        <option value="混音">混音</option>
+                        <option value="作词">作词</option>
+                        <option value="作曲">作曲</option>
+                        <option value="演唱">演唱</option>
+                        <option value="乐器演奏">乐器演奏</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    注册
+                </button>
+            </form>
+
+            <p class="mt-6 text-center text-sm text-gray-600">
+                已有账号？
+                <button onclick="hideModal('registerModal'); showModal('loginModal');" class="text-primary hover:underline">立即登录</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fa fa-headphones text-primary text-2xl mr-2"></i>
+                        <span class="font-bold text-xl">听见你的声音</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">为音乐制作人打造的专属交流平台，让每一份创作都被听见。</p>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">平台功能</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-primary">作品上传</a></li>
+                        <li><a href="#" class="hover:text-primary">技术交流</a></li>
+                        <li><a href="#" class="hover:text-primary">创作排行榜</a></li>
+                        <li><a href="#" class="hover:text-primary">制作人合作</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">帮助中心</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-primary">新手指南</a></li>
+                        <li><a href="#" class="hover:text-primary">常见问题</a></li>
+                        <li><a href="#" class="hover:text-primary">版权说明</a></li>
+                        <li><a href="#" class="hover:text-primary">联系我们</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium mb-4">关注我们</h4>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="fa fa-weixin"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="fa fa-weibo"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-primary transition-colors">
+                            <i class="fa fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-sm text-gray-400">
+                © 2026 听见你的声音·音乐制作人交流平台. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 全局数据
+        let currentUser = null;
+        let currentWork = null;
+        let currentPage = 'home';
+        let works = [];
+        let users = [];
+        let comments = {};
+        let rankings = {
+            current: [],
+            last: []
+        };
+        let collections = [];
+        let playlists = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 加载云端数据
+            await loadLocalData();
+            
+            // 初始化页面
+            renderWorks();
+            renderRankingPreview();
+            renderFullRanking();
+            checkLoginStatus();
+            
+            // 上传区域事件
+            initUploadArea();
+            
+            // 表单提交
+            initForms();
+        });
+
+        // 从云端加载数据
+        async function loadLocalData() {
+            // 从云端拉取用户数据
+            const { data: usersData } = await supabase.from('users').select('*');
+            if (usersData) users = usersData;
+
+            // 拉取作品数据
+            const { data: worksData } = await supabase.from('works').select('*').order('uploadTime', { ascending: false });
+            if (worksData) works = worksData;
+
+            // 拉取留言数据
+            const { data: commentsData } = await supabase.from('comments').select('*');
+            if (commentsData) {
+                // 把留言按workId分组
+                comments = {};
+                commentsData.forEach(c => {
+                    if (!comments[c.workId]) comments[c.workId] = [];
+                    // 解析回复（因为JSON存在数据库里）
+                    if (typeof c.replies === 'string') c.replies = JSON.parse(c.replies);
+                    comments[c.workId].push(c);
+                });
+            }
+
+            // 拉取排行榜数据
+            const { data: rankingsData } = await supabase.from('rankings').select('*');
+            if (rankingsData) {
+                rankings = {
+                    current: rankingsData.filter(r => r.type === 'current'),
+                    last: rankingsData.filter(r => r.type === 'last')
+                };
+            }
+
+            // 拉取当前用户的收藏数据
+            const savedCurrentUser = localStorage.getItem('music_platform_currentUser');
+            if (savedCurrentUser) {
+                currentUser = JSON.parse(savedCurrentUser);
+                if (currentUser) {
+                    const { data: collectionsData } = await supabase.from('collections').select('workId').eq('userId', currentUser.id);
+                    if (collectionsData) collections = collectionsData.map(c => c.workId);
+                }
+            }
+
+            // 如果没有数据，初始化示例数据
+            if (works.length === 0) {
+                await initSampleData();
+            }
+
+            // 初始化实时监听，别人更新数据你能实时看到
+            initRealtimeListener();
+        }
+
+        // 保存数据到云端
+        async function saveLocalData() {
+            // 保存用户数据
+            await supabase.from('users').upsert(users, { onConflict: 'id' });
+
+            // 保存作品数据
+            await supabase.from('works').upsert(works, { onConflict: 'id' });
+
+            // 保存留言数据
+            const allComments = [];
+            Object.entries(comments).forEach(([workId, workComments]) => {
+                workComments.forEach(c => {
+                    c.workId = parseInt(workId);
+                    // 把回复转成JSON字符串存数据库
+                    if (c.replies) c.replies = JSON.stringify(c.replies);
+                    allComments.push(c);
+                });
+            });
+            await supabase.from('comments').upsert(allComments, { onConflict: 'id' });
+
+            // 保存排行榜数据
+            await supabase.from('rankings').delete().neq('id', 0); // 清空旧的
+            const currentRankings = rankings.current.map(r => ({...r, type: 'current'}));
+            const lastRankings = rankings.last.map(r => ({...r, type: 'last'}));
+            await supabase.from('rankings').insert([...currentRankings, ...lastRankings]);
+
+            // 保存收藏数据
+            if (currentUser) {
+                await supabase.from('collections').delete().eq('userId', currentUser.id);
+                const collectionsToSave = collections.map(workId => ({ userId: currentUser.id, workId }));
+                await supabase.from('collections').insert(collectionsToSave);
+            }
+
+            // 登录状态还是存在本地，每个用户自己的登录状态
+            if (currentUser) {
+                localStorage.setItem('music_platform_currentUser', JSON.stringify(currentUser));
+            } else {
+                localStorage.removeItem('music_platform_currentUser');
+            }
+        }
+
+        // 实时监听云端数据变化
+        function initRealtimeListener() {
+            // 监听作品表变化
+            supabase.channel('works_channel')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'works' },
+                    async () => {
+                        // 重新拉取最新作品
+                        const { data: worksData } = await supabase.from('works').select('*').order('uploadTime', { ascending: false });
+                        if (worksData) works = worksData;
+                        renderWorks();
+                        updateRanking();
+                    }
+                )
+                .subscribe();
+
+            // 监听留言表变化
+            supabase.channel('comments_channel')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'comments' },
+                    async () => {
+                        // 重新拉取最新留言
+                        const { data: commentsData } = await supabase.from('comments').select('*');
+                        if (commentsData) {
+                            comments = {};
+                            commentsData.forEach(c => {
+                                if (!comments[c.workId]) comments[c.workId] = [];
+                                if (typeof c.replies === 'string') c.replies = JSON.parse(c.replies);
+                                comments[c.workId].push(c);
+                            });
+                        }
+                        // 如果当前在作品详情页，刷新留言
+                        if (currentWork) {
+                            loadComments();
+                            document.getElementById('detailCommentCount').textContent = currentWork.commentCount;
+                        }
+                        renderWorks();
+                        updateRanking();
+                    }
+                )
+                .subscribe();
+        }
+
+        // 初始化云端示例数据
+        async function initSampleData() {
+            // 示例用户
+            const sampleUsers = [
+                { id: 1, nickname: '音乐小匠', email: 'test1@test.com', password: '123456', avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q', skill: '编曲', works: 3, fans: 128, totalPlay: 3562 },
+                { id: 2, nickname: '混音师阿凯', email: 'test2@test.com', password: '123456', avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q', skill: '混音', works: 5, fans: 256, totalPlay: 8921 },
+                { id: 3, nickname: '吉他手老林', email: 'test3@test.com', password: '123456', avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q', skill: '乐器演奏', works: 4, fans: 98, totalPlay: 2145 },
+            ];
+            await supabase.from('users').insert(sampleUsers);
+            users = sampleUsers;
+
+            // 示例作品
+            const sampleWorks = [
+                {
+                    id: 1,
+                    name: '夏夜的风',
+                    producer: '音乐小匠',
+                    producerId: 1,
+                    category: 'original',
+                    categoryName: '原创编曲',
+                    status: 'finished',
+                    statusName: '成品版',
+                    cover: 'https://aka.doubaocdn.com/s/ygh51wGJ9P',
+                    fileUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+                    fileType: 'audio',
+                    inspiration: '夏天的夜晚，坐在院子里听着风吹过树叶的声音，突然就有了灵感，写了这首轻音乐。',
+                    highlights: '这首歌用了很多环境采样，把夏夜的虫鸣、风声都融入到了编曲里，混音的时候特意保留了一些自然的氛围感。',
+                    instruments: '钢琴、吉他、合成器',
+                    software: 'Logic Pro',
+                    isPublic: true,
+                    playCount: 1256,
+                    likeCount: 89,
+                    commentCount: 23,
+                    uploadTime: new Date().getTime() - 86400000 * 2,
+                },
+                {
+                    id: 2,
+                    name: '城市微光',
+                    producer: '混音师阿凯',
+                    producerId: 2,
+                    category: 'original',
+                    categoryName: '原创编曲',
+                    status: 'finished',
+                    statusName: '成品版',
+                    cover: 'https://aka.doubaocdn.com/s/ygh51wGJ9P',
+                    fileUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+                    fileType: 'audio',
+                    inspiration: '加班到深夜，看着城市里的点点灯光，感觉每个灯光背后都有一个故事，于是写了这首歌。',
+                    highlights: '这首歌的低频做了特别的处理，用了多段压缩来让底鼓更有冲击力，同时保留了人声的清晰度。',
+                    instruments: '鼓、贝斯、钢琴、合成器',
+                    software: 'Cubase, Waves插件',
+                    isPublic: true,
+                    playCount: 2568,
+                    likeCount: 156,
+                    commentCount: 45,
+                    uploadTime: new Date().getTime() - 86400000 * 1,
+                },
+                {
+                    id: 3,
+                    name: '指弹Demo',
+                    producer: '吉他手老林',
+                    producerId: 3,
+                    category: 'demo',
+                    categoryName: 'Demo展示',
+                    status: 'demo',
+                    statusName: 'Demo版',
+                    cover: 'https://aka.doubaocdn.com/s/ygh51wGJ9P',
+                    fileUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+                    fileType: 'audio',
+                    inspiration: '最近在练新的指弹技巧，录了个Demo，想听听大家的意见。',
+                    highlights: '尝试了一下打板技巧，还不是很熟练，希望大家给点建议。',
+                    instruments: '木吉他',
+                    software: 'GarageBand',
+                    isPublic: true,
+                    playCount: 856,
+                    likeCount: 42,
+                    commentCount: 18,
+                    uploadTime: new Date().getTime() - 86400000 * 3,
+                }
+            ];
+            await supabase.from('works').insert(sampleWorks);
+            works = sampleWorks;
+
+            // 示例留言
+            const sampleComments = [
+                {
+                    id: 1,
+                    workId: 1,
+                    userId: 2,
+                    userName: '混音师阿凯',
+                    userSkill: '混音',
+                    userAvatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q',
+                    content: '这个环境采样太有感觉了！请问你是用什么设备录的虫鸣？',
+                    time: new Date().getTime() - 3600000,
+                    likeCount: 5,
+                    replies: JSON.stringify([
+                        {
+                            id: 11,
+                            workId: 1,
+                            userId: 1,
+                            userName: '音乐小匠',
+                            userSkill: '编曲',
+                            userAvatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q',
+                            content: '用的是Zoom H5，在老家院子里录的，晚上很安静，录出来效果还不错~',
+                            time: new Date().getTime() - 1800000,
+                            likeCount: 2,
+                            replies: JSON.stringify([])
+                        }
+                    ])
+                }
+            ];
+            await supabase.from('comments').insert(sampleComments);
+            comments = {1: sampleComments.map(c => ({...c, replies: JSON.parse(c.replies)}))};
+
+            // 示例排行榜
+            const currentRankings = [
+                { id:1, rank: 1, userId: 2, name: '混音师阿凯', avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q', skill: '混音', score: 2568 + 45*2 + 156*3, change: 0, representativeWorks: JSON.stringify(['城市微光']), type: 'current' },
+                { id:2, rank: 2, userId: 1, name: '音乐小匠', avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q', skill: '编曲', score: 1256 + 23*2 + 89*3, change: 1, representativeWorks: JSON.stringify(['夏夜的风']), type: 'current' },
+                { id:3, rank: 3, userId: 3, name: '吉他手老林', avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q', skill: '乐器演奏', score: 856 + 18*2 + 42*3, change: -1, representativeWorks: JSON.stringify(['指弹Demo']), type: 'current' },
+            ];
+            await supabase.from('rankings').insert(currentRankings);
+            rankings.current = currentRankings.map(r => ({...r, representativeWorks: JSON.parse(r.representativeWorks)}));
+
+            await saveLocalData();
+        }
+
+        // 页面切换
+        function showPage(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page-section').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // 显示目标页面
+            document.getElementById(page + 'Page').classList.remove('hidden');
+            currentPage = page;
+
+            // 关闭移动端菜单
+            document.getElementById('mobileMenu').classList.add('hidden');
+
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+
+            // 如果是详情页，加载数据
+            if (page === 'workDetail' && currentWork) {
+                loadWorkDetail();
+            }
+
+            // 如果是个人中心，加载数据
+            if (page === 'profile' && currentUser) {
+                loadProfileData();
+            }
+
+            // 如果是我的作品，加载数据
+            if (page === 'myWorks' && currentUser) {
+                loadMyWorks();
+            }
+        }
+
+        // 返回上一页
+        function goBack() {
+            history.back();
+        }
+
+        // 初始化上传区域
+        function initUploadArea() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+
+            // 点击上传
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // 拖拽上传
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-primary');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-primary');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-primary');
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+
+            // 文件选择
+            fileInput.addEventListener('change', () => {
+                handleFiles(fileInput.files);
+            });
+        }
+
+        // 处理选择的文件
+        function handleFiles(files) {
+            if (files.length === 0) return;
+
+            // 显示进度条
+            document.getElementById('uploadProgress').classList.remove('hidden');
+            document.getElementById('selectedFiles').classList.remove('hidden');
+
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            // 模拟上传进度
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                }
+                document.getElementById('progressBar').style.width = progress + '%';
+                document.getElementById('progressText').textContent = `上传中... ${Math.floor(progress)}%`;
+            }, 200);
+
+            // 添加文件列表
+            Array.from(files).forEach(file => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between text-sm';
+                li.innerHTML = `
+                    <span><i class="fa fa-file-audio-o mr-2 text-primary"></i>${file.name}</span>
+                    <span class="text-gray-500">${formatFileSize(file.size)}</span>
+                `;
+                fileList.appendChild(li);
+            });
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 封面预览
+        function previewCover(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('coverPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // 初始化表单
+        function initForms() {
+            // 上传表单
+            document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!currentUser) {
+                    alert('请先登录后再上传作品');
+                    showModal('loginModal');
+                    return;
+                }
+
+                // 获取表单数据
+                const work = {
+                    id: Date.now(),
+                    name: document.getElementById('workName').value,
+                    producer: currentUser.nickname,
+                    producerId: currentUser.id,
+                    category: document.getElementById('workCategory').value,
+                    categoryName: document.getElementById('workCategory').options[document.getElementById('workCategory').selectedIndex].text,
+                    status: document.getElementById('workStatus').value,
+                    statusName: document.getElementById('workStatus').options[document.getElementById('workStatus').selectedIndex].text,
+                    cover: document.getElementById('coverPreview').src,
+                    fileUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // 模拟文件URL
+                    fileType: 'audio',
+                    inspiration: document.getElementById('workInspiration').value,
+                    highlights: document.getElementById('workHighlights').value,
+                    instruments: document.getElementById('workInstruments').value,
+                    software: document.getElementById('workSoftware').value,
+                    isPublic: document.getElementById('workPublic').checked,
+                    playCount: 0,
+                    likeCount: 0,
+                    commentCount: 0,
+                    uploadTime: Date.now(),
+                };
+
+                // 添加作品
+                works.unshift(work);
+                
+                // 更新用户作品数
+                const user = users.find(u => u.id === currentUser.id);
+                if (user) user.works += 1;
+
+                // 保存数据到云端
+                await saveLocalData();
+                
+                // 重新渲染
+                renderWorks();
+                await updateRanking();
+
+                // 重置表单
+                this.reset();
+                document.getElementById('coverPreview').src = 'https://aka.doubaocdn.com/s/ygh51wGJ9P';
+                document.getElementById('uploadProgress').classList.add('hidden');
+                document.getElementById('selectedFiles').classList.add('hidden');
+
+                alert('作品上传成功！');
+                showPage('home');
+            });
+
+            // 登录表单
+            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const account = document.getElementById('loginAccount').value;
+                const password = document.getElementById('loginPassword').value;
+
+                const user = users.find(u => (u.email === account || u.nickname === account) && u.password === password);
+                
+                if (user) {
+                    currentUser = user;
+                    await saveLocalData();
+                    checkLoginStatus();
+                    hideModal('loginModal');
+                    alert('登录成功！');
+                } else {
+                    alert('账号或密码错误');
+                }
+            });
+
+            // 注册表单
+            document.getElementById('registerForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const newUser = {
+                    id: Date.now(),
+                    nickname: document.getElementById('registerNickname').value,
+                    email: document.getElementById('registerEmail').value,
+                    password: document.getElementById('registerPassword').value,
+                    avatar: 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q',
+                    skill: document.getElementById('registerSkill').value || '未知',
+                    works: 0,
+                    fans: 0,
+                    totalPlay: 0,
+                };
+
+                users.push(newUser);
+                currentUser = newUser;
+                await saveLocalData();
+                checkLoginStatus();
+                hideModal('registerModal');
+                alert('注册成功！');
+            });
+        }
+
+        // 渲染作品列表
+        function renderWorks(filter = 'all', sort = 'newest') {
+            const grid = document.getElementById('worksGrid');
+            const empty = document.getElementById('emptyWorks');
+            
+            // 过滤作品
+            let filteredWorks = works.filter(w => w.isPublic);
+            if (filter !== 'all') {
+                filteredWorks = filteredWorks.filter(w => w.category === filter);
+            }
+
+            // 排序
+            if (sort === 'newest') {
+                filteredWorks.sort((a, b) => b.uploadTime - a.uploadTime);
+            } else if (sort === 'hot') {
+                filteredWorks.sort((a, b) => b.playCount - a.playCount);
+            } else if (sort === 'comment') {
+                filteredWorks.sort((a, b) => b.commentCount - a.commentCount);
+            }
+
+            if (filteredWorks.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            grid.innerHTML = '';
+
+            filteredWorks.forEach(work => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow cursor-pointer transform hover:-translate-y-1 duration-300';
+                card.onclick = () => openWorkDetail(work);
+                
+                card.innerHTML = `
+                    <div class="relative">
+                        <img src="${work.cover}" alt="${work.name}" class="w-full h-48 object-cover">
+                        <div class="absolute top-2 right-2 flex gap-1">
+                            <span class="px-2 py-1 text-xs rounded-full bg-black/50 text-white">${work.statusName}</span>
+                        </div>
+                        <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center text-white">
+                            <i class="fa fa-play"></i>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-medium truncate">${work.name}</h3>
+                        <p class="text-sm text-gray-500 truncate">${work.producer}</p>
+                        <div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                            <span><i class="fa fa-play mr-1"></i>${work.playCount}</span>
+                            <span><i class="fa fa-comment mr-1"></i>${work.commentCount}</span>
+                            <span><i class="fa fa-heart mr-1"></i>${work.likeCount}</span>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // 过滤作品
+        function filterWorks(category) {
+            // 更新按钮状态
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            });
+            event.target.classList.remove('bg-gray-100', 'text-gray-600');
+            event.target.classList.add('bg-primary', 'text-white');
+
+            renderWorks(category);
+        }
+
+        // 排序作品
+        function sortWorks(type) {
+            // 更新按钮状态
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            });
+            event.target.classList.remove('bg-gray-100', 'text-gray-600');
+            event.target.classList.add('bg-primary', 'text-white');
+
+            const currentFilter = document.querySelector('.category-btn.bg-primary')?.dataset?.category || 'all';
+            renderWorks(currentFilter, type);
+        }
+
+        // 渲染排行榜预览
+        function renderRankingPreview() {
+            const container = document.getElementById('rankingPreview');
+            container.innerHTML = '';
+
+            // 只显示前3名
+            rankings.current.slice(0, 3).forEach((item, index) => {
+                const rankClass = index === 0 ? 'text-secondary' : index === 1 ? 'text-primary' : index === 2 ? 'text-gray-400' : 'text-gray-500';
+                const bgClass = index === 0 ? 'bg-secondary/10' : index === 1 ? 'bg-primary/10' : index === 2 ? 'bg-gray-100' : 'bg-gray-50';
+                
+                const div = document.createElement('div');
+                div.className = `flex items-center gap-3 p-3 rounded-lg ${bgClass}`;
+                div.innerHTML = `
+                    <span class="text-lg font-bold ${rankClass} w-6 text-center">${item.rank}</span>
+                    <img src="${item.avatar}" alt="${item.name}" class="w-10 h-10 rounded-full">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium truncate">${item.name}</p>
+                        <p class="text-xs text-gray-500">${item.skill}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-sm">${item.score}</p>
+                        <p class="text-xs ${item.change > 0 ? 'text-green-500' : item.change < 0 ? 'text-red-500' : 'text-gray-400'}">
+                            ${item.change > 0 ? `上升${item.change}` : item.change < 0 ? `下降${Math.abs(item.change)}` : '不变'}
+                        </p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 渲染完整排行榜
+        function renderFullRanking() {
+            const container = document.getElementById('rankingList');
+            container.innerHTML = '';
+
+            rankings.current.forEach((item, index) => {
+                const rankClass = index === 0 ? 'text-secondary' : index === 1 ? 'text-primary' : index === 2 ? 'text-gray-400' : 'text-gray-500';
+                const bgClass = index === 0 ? 'bg-gradient-to-r from-secondary/10 to-transparent' : 
+                               index === 1 ? 'bg-gradient-to-r from-primary/10 to-transparent' : 
+                               index === 2 ? 'bg-gradient-to-r from-gray-100 to-transparent' : '';
+                
+                const div = document.createElement('div');
+                div.className = `flex items-center gap-4 p-4 rounded-lg ${bgClass} hover:bg-gray-50 transition-colors`;
+                div.innerHTML = `
+                    <div class="w-10 h-10 flex items-center justify-center">
+                        <span class="text-xl font-bold ${rankClass}">${item.rank}</span>
+                    </div>
+                    <img src="${item.avatar}" alt="${item.name}" class="w-14 h-14 rounded-full">
+                    <div class="flex-1">
+                        <p class="font-medium text-lg">${item.name}</p>
+                        <p class="text-sm text-gray-500">擅长：${item.skill}</p>
+                        <p class="text-xs text-gray-400 mt-1">代表作品：${item.representativeWorks.join(', ')}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold">${item.score}</p>
+                        <p class="text-sm ${item.change > 0 ? 'text-green-500' : item.change < 0 ? 'text-red-500' : 'text-gray-400'}">
+                            ${item.change > 0 ? `<i class="fa fa-arrow-up"></i> 上升${item.change}` : 
+                              item.change < 0 ? `<i class="fa fa-arrow-down"></i> 下降${Math.abs(item.change)}` : 
+                              '<i class="fa fa-minus"></i> 不变'}
+                        </p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 切换排行榜标签
+        function switchRankingTab(tab) {
+            // 更新按钮状态
+            document.querySelectorAll('.ranking-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('text-gray-600');
+            });
+            event.target.classList.remove('text-gray-600');
+            event.target.classList.add('bg-primary', 'text-white');
+
+            // TODO: 加载对应榜单数据
+        }
+
+        // 打开作品详情
+        function openWorkDetail(work) {
+            currentWork = work;
+            showPage('workDetail');
+        }
+
+        // 加载作品详情
+        function loadWorkDetail() {
+            if (!currentWork) return;
+
+            // 增加播放量
+            currentWork.playCount += 1;
+            saveLocalData();
+
+            // 填充数据
+            document.getElementById('detailCover').src = currentWork.cover;
+            document.getElementById('detailTitle').textContent = currentWork.name;
+            document.getElementById('detailProducerName').textContent = currentWork.producer;
+            document.getElementById('detailStatusBadge').textContent = currentWork.statusName;
+            document.getElementById('detailCategoryBadge').textContent = currentWork.categoryName;
+            document.getElementById('detailInspiration').textContent = currentWork.inspiration;
+            document.getElementById('detailHighlights').textContent = currentWork.highlights || '暂无';
+            document.getElementById('detailInstruments').textContent = currentWork.instruments || '暂无';
+            document.getElementById('detailSoftware').textContent = currentWork.software || '暂无';
+            document.getElementById('detailPlayCount').textContent = currentWork.playCount;
+            document.getElementById('detailCommentCount').textContent = currentWork.commentCount;
+            document.getElementById('detailLikeCount').textContent = currentWork.likeCount;
+
+            // 制作人信息
+            const producer = users.find(u => u.nickname === currentWork.producer);
+            if (producer) {
+                document.getElementById('detailProducerAvatar').src = producer.avatar;
+                document.getElementById('detailProducerSkill').textContent = '擅长：' + producer.skill;
+            }
+
+            // 播放器
+            if (currentWork.fileType === 'audio') {
+                document.getElementById('audioPlayerContainer').classList.remove('hidden');
+                document.getElementById('videoPlayerContainer').classList.add('hidden');
+                document.getElementById('audioPlayer').src = currentWork.fileUrl;
+            } else {
+                document.getElementById('audioPlayerContainer').classList.add('hidden');
+                document.getElementById('videoPlayerContainer').classList.remove('hidden');
+                document.getElementById('videoPlayer').src = currentWork.fileUrl;
+            }
+
+            // 加载留言
+            loadComments();
+        }
+
+        // 切换详情标签
+        function switchDetailTab(tab) {
+            document.querySelectorAll('.detail-tab-btn').forEach(btn => {
+                btn.classList.remove('border-primary', 'text-primary');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+            event.target.classList.add('border-primary', 'text-primary');
+
+            if (tab === 'info') {
+                document.getElementById('detailInfoTab').classList.remove('hidden');
+                document.getElementById('detailCommentsTab').classList.add('hidden');
+            } else {
+                document.getElementById('detailInfoTab').classList.add('hidden');
+                document.getElementById('detailCommentsTab').classList.remove('hidden');
+            }
+        }
+
+        // 加载留言
+        function loadComments() {
+            const workId = currentWork.id;
+            const workComments = comments[workId] || [];
+            
+            document.getElementById('totalComments').textContent = workComments.length;
+            
+            const container = document.getElementById('commentsList');
+            container.innerHTML = '';
+
+            if (workComments.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">暂无留言，快来抢沙发吧！</p>';
+                return;
+            }
+
+            workComments.forEach(comment => {
+                renderComment(container, comment, 0);
+            });
+        }
+
+        // 渲染留言
+        function renderComment(container, comment, level) {
+            const div = document.createElement('div');
+            div.className = `pl-${level * 6}`;
+            
+            div.innerHTML = `
+                <div class="flex gap-3">
+                    <img src="${comment.userAvatar}" alt="${comment.userName}" class="w-10 h-10 rounded-full flex-shrink-0">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-medium">${comment.userName}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">${comment.userSkill}</span>
+                            <span class="text-xs text-gray-400">${formatTime(comment.time)}</span>
+                        </div>
+                        <p class="text-gray-700 mb-2">${comment.content}</p>
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <button onclick="likeComment(${comment.id})" class="hover:text-primary">
+                                <i class="fa fa-thumbs-up mr-1"></i>${comment.likeCount}
+                            </button>
+                            ${level < 2 ? `<button onclick="replyToComment(${comment.id})" class="hover:text-primary">回复</button>` : ''}
+                            ${currentUser && currentUser.nickname === comment.userName ? `<button onclick="deleteComment(${comment.id})" class="hover:text-red-500">删除</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+                ${comment.replies && comment.replies.length > 0 ? `<div class="mt-4 space-y-4"></div>` : ''}
+            `;
+            
+            container.appendChild(div);
+
+            // 渲染回复
+            if (comment.replies && comment.replies.length > 0) {
+                const repliesContainer = div.lastElementChild;
+                comment.replies.forEach(reply => {
+                    renderComment(repliesContainer, reply, level + 1);
+                });
+            }
+        }
+
+        // 提交留言
+        function submitComment() {
+            if (!currentUser) {
+                alert('请先登录后再留言');
+                showModal('loginModal');
+                return;
+            }
+
+            const content = document.getElementById('newComment').value.trim();
+            if (!content) {
+                alert('请输入留言内容');
+                return;
+            }
+
+            const workId = currentWork.id;
+            if (!comments[workId]) comments[workId] = [];
+
+            const newComment = {
+                id: Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.nickname,
+                userSkill: currentUser.skill,
+                userAvatar: currentUser.avatar,
+                content: content,
+                time: Date.now(),
+                likeCount: 0,
+                replies: []
+            };
+
+            comments[workId].unshift(newComment);
+            
+            // 更新作品评论数
+            currentWork.commentCount += 1;
+            
+            saveLocalData();
+            loadComments();
+            
+            // 清空输入框
+            document.getElementById('newComment').value = '';
+            
+            // 更新页面数据
+            document.getElementById('detailCommentCount').textContent = currentWork.commentCount;
+            renderWorks();
+            updateRanking();
+        }
+
+        // 点赞作品
+        function likeWork() {
+            if (!currentUser) {
+                alert('请先登录');
+                showModal('loginModal');
+                return;
+            }
+
+            currentWork.likeCount += 1;
+            saveLocalData();
+            document.getElementById('detailLikeCount').textContent = currentWork.likeCount;
+            renderWorks();
+            updateRanking();
+            alert('赞赏成功！');
+        }
+
+        // 收藏作品
+        function collectWork() {
+            if (!currentUser) {
+                alert('请先登录');
+                showModal('loginModal');
+                return;
+            }
+
+            if (collections.includes(currentWork.id)) {
+                alert('你已经收藏过这个作品了');
+                return;
+            }
+
+            collections.push(currentWork.id);
+            saveLocalData();
+            alert('收藏成功！');
+        }
+
+        // 发起合作
+        function initiateCollab() {
+            if (!currentUser) {
+                alert('请先登录');
+                showModal('loginModal');
+                return;
+            }
+            alert('已向制作人发送合作邀请，等待对方回复~');
+        }
+
+        // 更新排行榜
+        function updateRanking() {
+            // 计算每个制作人的得分
+            const producerScores = {};
+            
+            works.forEach(work => {
+                if (!producerScores[work.producerId]) {
+                    const producer = users.find(u => u.id === work.producerId);
+                    producerScores[work.producerId] = {
+                        userId: work.producerId,
+                        name: work.producer,
+                        avatar: producer?.avatar || 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q',
+                        skill: producer?.skill || '未知',
+                        score: 0,
+                        representativeWorks: []
+                    };
+                }
+                
+                // 得分：播放 + 留言*2 + 赞赏*3
+                const score = work.playCount + work.commentCount * 2 + work.likeCount * 3;
+                producerScores[work.producerId].score += score;
+                producerScores[work.producerId].representativeWorks.push(work.name);
+            });
+
+            // 排序
+            const sorted = Object.values(producerScores).sort((a, b) => b.score - a.score);
+            
+            // 只保留前10，并且只取前2个代表作品
+            sorted.slice(0, 10).forEach((item, index) => {
+                item.rank = index + 1;
+                item.representativeWorks = item.representativeWorks.slice(0, 2);
+                // 模拟排名变化
+                item.change = Math.floor(Math.random() * 5) - 2;
+            });
+
+            // 保存上周的榜单
+            rankings.last = rankings.current;
+            rankings.current = sorted.slice(0, 10);
+            
+            saveLocalData();
+            renderRankingPreview();
+            renderFullRanking();
+        }
+
+        // 格式化时间
+        function formatTime(timestamp) {
+            const diff = Date.now() - timestamp;
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+            if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+            if (diff < 604800000) return Math.floor(diff / 86400000) + '天前';
+            return new Date(timestamp).toLocaleDateString();
+        }
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            if (currentUser) {
+                document.getElementById('guestButtons').classList.add('hidden');
+                document.getElementById('userMenu').classList.remove('hidden');
+                document.getElementById('navUserAvatar').src = currentUser.avatar;
+                document.getElementById('navUserName').textContent = currentUser.nickname;
+            } else {
+                document.getElementById('guestButtons').classList.remove('hidden');
+                document.getElementById('userMenu').classList.add('hidden');
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            currentUser = null;
+            saveLocalData();
+            checkLoginStatus();
+            showPage('home');
+        }
+
+        // 切换用户下拉菜单
+        function toggleUserDropdown() {
+            document.getElementById('userDropdown').classList.toggle('hidden');
+        }
+
+        // 切换移动端菜单
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+
+        // 显示弹窗
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        // 隐藏弹窗
+        function hideModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // 加载个人中心数据
+        function loadProfileData() {
+            if (!currentUser) return;
+
+            document.getElementById('profileAvatar').src = currentUser.avatar;
+            document.getElementById('profileName').textContent = currentUser.nickname;
+            document.getElementById('profileSkill').textContent = '擅长：' + currentUser.skill;
+            document.getElementById('profileWorksCount').textContent = currentUser.works;
+            document.getElementById('profileFansCount').textContent = currentUser.fans;
+            document.getElementById('profilePlayCount').textContent = currentUser.totalPlay;
+
+            // 加载我的作品
+            const myWorks = works.filter(w => w.producerId === currentUser.id);
+            const container = document.getElementById('myWorksList');
+            container.innerHTML = '';
+
+            myWorks.forEach(work => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-4 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer';
+                div.onclick = () => openWorkDetail(work);
+                div.innerHTML = `
+                    <img src="${work.cover}" alt="${work.name}" class="w-16 h-16 rounded-lg object-cover">
+                    <div class="flex-1">
+                        <h4 class="font-medium">${work.name}</h4>
+                        <p class="text-sm text-gray-500">${work.categoryName} · ${work.statusName}</p>
+                    </div>
+                    <div class="text-right text-sm text-gray-500">
+                        <p><i class="fa fa-play mr-1"></i>${work.playCount}</p>
+                        <p><i class="fa fa-comment mr-1"></i>${work.commentCount}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 加载我的作品页面
+        function loadMyWorks() {
+            if (!currentUser) return;
+
+            const myWorks = works.filter(w => w.producerId === currentUser.id);
+            const container = document.getElementById('allMyWorksList');
+            container.innerHTML = '';
+
+            myWorks.forEach(work => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-4 p-4';
+                div.innerHTML = `
+                    <img src="${work.cover}" alt="${work.name}" class="w-20 h-20 rounded-lg object-cover">
+                    <div class="flex-1">
+                        <h4 class="font-medium">${work.name}</h4>
+                        <p class="text-sm text-gray-500">${new Date(work.uploadTime).toLocaleString()}</p>
+                        <div class="flex gap-4 mt-1 text-xs text-gray-400">
+                            <span><i class="fa fa-play mr-1"></i>${work.playCount}</span>
+                            <span><i class="fa fa-comment mr-1"></i>${work.commentCount}</span>
+                            <span><i class="fa fa-heart mr-1"></i>${work.likeCount}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editWork(${work.id})" class="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">编辑</button>
+                        <button onclick="deleteWork(${work.id})" class="px-3 py-1 text-sm border border-red-300 text-red-500 rounded hover:bg-red-50">删除</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 切换个人中心标签
+        function showProfileTab(tab) {
+            document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-primary/10', 'text-primary');
+                btn.classList.add('text-gray-600');
+            });
+            event.target.classList.remove('text-gray-600');
+            event.target.classList.add('bg-primary/10', 'text-primary');
+
+            document.querySelectorAll('.profile-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.getElementById('profile' + tab.charAt(0).toUpperCase() + tab.slice(1) + 'Tab').classList.remove('hidden');
+        }
+
+        // 点击其他地方关闭下拉菜单
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#userMenu')) {
+                document.getElementById('userDropdown')?.classList.add('hidden');
+            }
+        });
+
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('shadow-md');
+            } else {
+                navbar.classList.remove('shadow-md');
+            }
+        });
+    </script>
+</body>
+</html>
