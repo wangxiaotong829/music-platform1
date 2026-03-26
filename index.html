@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>听见你的声音·音乐制作人交流平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://fhydtrtfomgjfobsyaup.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_d1bWLFbm-JTFJV2yuptVfg_qSvCG6z4';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#60A5FA',
+                        secondary: '#FBBF24',
+                        dark: '#374151',
+                        light: '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .text-gradient { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-dark font-sans">
+    <nav class="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center cursor-pointer" onclick="showPage('home')">
+                    <i class="fa fa-headphones text-primary text-2xl mr-2"></i>
+                    <span class="font-bold text-xl hidden sm:block">听见你的声音</span>
+                    <span class="font-bold text-xl sm:hidden">音创平台</span>
+                </div>
+                <div class="hidden md:flex flex-1 max-w-md mx-8">
+                    <div class="relative w-full">
+                        <input type="text" id="searchInput" placeholder="搜索作品、制作人..." class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                        <i class="fa fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="showPage('home')" class="hidden md:block text-gray-600 hover:text-primary transition-colors">首页</button>
+                    <button onclick="showPage('upload')" class="hidden md:block text-gray-600 hover:text-primary transition-colors">上传作品</button>
+                    <button onclick="showPage('ranking')" class="hidden md:block text-gray-600 hover:text-primary transition-colors">创作之星</button>
+                    <div id="userArea" class="flex items-center">
+                        <div id="guestButtons">
+                            <button onclick="showModal('loginModal')" class="px-4 py-2 text-primary hover:bg-primary/5 rounded-lg transition-colors">登录</button>
+                            <button onclick="showModal('registerModal')" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">注册</button>
+                        </div>
+                        <div id="userMenu" class="hidden relative">
+                            <button onclick="toggleUserDropdown()" class="flex items-center space-x-2 focus:outline-none">
+                                <img id="navUserAvatar" src="https://aka.doubaocdn.com/s/2Pjs1wGJ9Q" alt="头像" class="w-8 h-8 rounded-full object-cover">
+                                <span id="navUserName" class="hidden sm:block text-sm font-medium">用户</span>
+                                <i class="fa fa-caret-down text-gray-400"></i>
+                            </button>
+                            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                                <a href="#" onclick="showPage('profile')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">制作人中心</a>
+                                <a href="#" onclick="showPage('myWorks')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">我的作品</a>
+                                <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">退出登录</a>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-gray-600">
+                        <i class="fa fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t">
+            <div class="px-4 py-3 space-y-3">
+                <div class="relative">
+                    <input type="text" placeholder="搜索作品、制作人..." class="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    <i class="fa fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <button onclick="showPage('home'); toggleMobileMenu();" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">首页</button>
+                <button onclick="showPage('upload'); toggleMobileMenu();" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">上传作品</button>
+                <button onclick="showPage('ranking'); toggleMobileMenu();" class="block w-full text-left px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">创作之星</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-16">
+        <!-- 首页 -->
+        <section id="homePage" class="page-section">
+            <div class="relative h-80 sm:h-96 overflow-hidden">
+                <img src="https://aka.doubaocdn.com/s/HKml1wGJ9Q" alt="Banner" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-r from-dark/70 to-transparent flex items-center">
+                    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="max-w-xl">
+                            <h1 class="text-3xl sm:text-4xl font-bold text-white mb-4">听见你的声音</h1>
+                            <p class="text-lg text-white/90 mb-6">为音乐制作人打造的专属交流平台，分享作品，碰撞灵感，共同成长</p>
+                            <button onclick="showPage('upload')" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all transform hover:scale-105">
+                                <i class="fa fa-upload mr-2"></i>上传你的作品
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="flex overflow-x-auto scrollbar-hide space-x-4 pb-2">
+                    <button onclick="filterWorks('all')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-primary text-white">全部作品</button>
+                    <button onclick="filterWorks('original')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">原创编曲</button>
+                    <button onclick="filterWorks('cover')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">翻唱改编</button>
+                    <button onclick="filterWorks('demo')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">Demo展示</button>
+                    <button onclick="filterWorks('behind')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">制作花絮</button>
+                    <button onclick="filterWorks('mix')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">混音作品</button>
+                    <button onclick="filterWorks('instrument')" class="category-btn whitespace-nowrap px-4 py-2 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">乐器演奏</button>
+                </div>
+            </div>
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold">最新上传</h2>
+                            <div class="flex space-x-2">
+                                <button onclick="sortWorks('newest')" class="sort-btn px-3 py-1 text-sm rounded-full bg-primary text-white">最新</button>
+                                <button onclick="sortWorks('hot')" class="sort-btn px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600">最热</button>
+                                <button onclick="sortWorks('comment')" class="sort-btn px-3 py-1 text-sm rounded-full bg-gray-100 text-gray-600">最多交流</button>
+                            </div>
+                        </div>
+                        <div id="worksGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+                        <div id="emptyWorks" class="hidden text-center py-12">
+                            <i class="fa fa-music text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">还没有作品，快来上传第一个作品吧！</p>
+                            <button onclick="showPage('upload')" class="mt-4 px-4 py-2 bg-primary text-white rounded-lg">上传作品</button>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-xl shadow-sm p-6 sticky top-20">
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-bold">本周创作之星</h2>
+                                <button onclick="showPage('ranking')" class="text-primary text-sm hover:underline">查看完整榜单</button>
+                            </div>
+                            <div id="rankingPreview" class="space-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 上传作品页 -->
+        <section id="uploadPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-3xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-2">上传作品</h1>
+                    <p class="text-gray-500 mb-8">分享你的音乐作品，与制作人同行交流创作心得</p>
+                    <div class="bg-white rounded-xl shadow-sm p-6 sm:p-8">
+                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer mb-8">
+                            <input type="file" id="fileInput" accept="audio/*" class="hidden">
+                            <i class="fa fa-cloud-upload text-5xl text-gray-400 mb-4"></i>
+                            <p class="text-lg text-gray-600 mb-2">拖拽文件到此处，或点击选择文件</p>
+                            <p class="text-sm text-gray-400">支持 mp3, wav, flac 等音频格式</p>
+                            <div id="uploadProgress" class="hidden mt-4">
+                                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                    <div id="progressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                                <p id="progressText" class="text-sm text-gray-500 mt-1">上传中... 0%</p>
+                            </div>
+                        </div>
+                        <form id="uploadForm" class="space-y-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">作品名称 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="workName" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">作品分类 <span class="text-red-500">*</span></label>
+                                    <select id="workCategory" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                                        <option value="">请选择分类</option>
+                                        <option value="original">原创编曲</option>
+                                        <option value="cover">翻唱改编</option>
+                                        <option value="demo">Demo展示</option>
+                                        <option value="behind">制作花絮</option>
+                                        <option value="mix">混音作品</option>
+                                        <option value="instrument">乐器演奏</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">创作灵感/制作思路 <span class="text-red-500">*</span></label>
+                                <textarea id="workInspiration" rows="3" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"></textarea>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="workPublic" checked class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                                <label for="workPublic" class="ml-2 text-sm text-gray-700">公开作品（所有人可见）</label>
+                            </div>
+                            <div class="flex justify-end space-x-4">
+                                <button type="button" onclick="showPage('home')" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">取消</button>
+                                <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                                    <i class="fa fa-upload mr-2"></i>提交作品
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 作品详情页 -->
+        <section id="workDetailPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <button onclick="goBack()" class="flex items-center text-gray-600 hover:text-primary mb-6 transition-colors">
+                        <i class="fa fa-arrow-left mr-2"></i>返回
+                    </button>
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-6 sm:p-8">
+                            <div class="flex flex-col md:flex-row gap-8">
+                                <div class="flex-shrink-0">
+                                    <img id="detailCover" src="https://aka.doubaocdn.com/s/ygh51wGJ9P" alt="封面" class="w-full md:w-64 h-64 object-cover rounded-xl shadow-md">
+                                </div>
+                                <div class="flex-1">
+                                    <h1 id="detailTitle" class="text-2xl sm:text-3xl font-bold mb-2">作品名称</h1>
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <img id="detailProducerAvatar" src="https://aka.doubaocdn.com/s/2Pjs1wGJ9Q" alt="头像" class="w-10 h-10 rounded-full">
+                                        <div>
+                                            <p id="detailProducerName" class="font-medium">制作人</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <span><i class="fa fa-play mr-1"></i><span id="detailPlayCount">0</span> 播放</span>
+                                        <span><i class="fa fa-comment mr-1"></i><span id="detailCommentCount">0</span> 评论</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-8">
+                                <audio id="audioPlayer" class="w-full" controls></audio>
+                            </div>
+                            <div class="mt-8 border-b border-gray-200">
+                                <nav class="flex space-x-8">
+                                    <button onclick="switchDetailTab('info')" class="detail-tab-btn py-4 px-1 border-b-2 border-primary text-primary font-medium">作品详情</button>
+                                    <button onclick="switchDetailTab('comments')" class="detail-tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">留言交流</button>
+                                </nav>
+                            </div>
+                            <div id="detailInfoTab" class="py-6">
+                                <div class="grid grid-cols-1 gap-6">
+                                    <div>
+                                        <h3 class="font-medium text-gray-900 mb-2">创作灵感</h3>
+                                        <p id="detailInspiration" class="text-gray-600"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="detailCommentsTab" class="py-6 hidden">
+                                <div class="mb-8">
+                                    <textarea id="newComment" rows="3" placeholder="写下你的评论..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"></textarea>
+                                    <div class="flex justify-end mt-2">
+                                        <button onclick="submitComment()" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">发布评论</button>
+                                    </div>
+                                </div>
+                                <div id="commentsList" class="space-y-6"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 排行榜页 -->
+        <section id="rankingPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-8">创作之星排行榜</h1>
+                    <div id="rankingList" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 制作人中心 -->
+        <section id="profilePage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-8">
+                    <div class="text-center mb-8">
+                        <img id="profileAvatar" src="https://aka.doubaocdn.com/s/2Pjs1wGJ9Q" alt="头像" class="w-24 h-24 rounded-full mx-auto mb-4">
+                        <h2 id="profileNickname" class="text-2xl font-bold">昵称</h2>
+                        <p id="profileEmail" class="text-gray-500">邮箱</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">修改昵称</label>
+                            <input type="text" id="editNickname" class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <button onclick="updateProfile()" class="mt-2 px-4 py-2 bg-primary text-white rounded-lg">保存修改</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 我的作品页 -->
+        <section id="myWorksPage" class="page-section hidden">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold mb-8">我的作品</h1>
+                    <div id="myWorksGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 登录/注册模态框 -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">登录</h2>
+                <button onclick="hideModal('loginModal')" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+            </div>
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                    <input type="email" id="loginEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="loginPassword" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">登录</button>
+            </form>
+            <p class="mt-6 text-center text-sm text-gray-600">还没有账号？<button onclick="hideModal('loginModal'); showModal('registerModal');" class="text-primary hover:underline">立即注册</button></p>
+        </div>
+    </div>
+
+    <div id="registerModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 sm:p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">注册</h2>
+                <button onclick="hideModal('registerModal')" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times text-xl"></i></button>
+            </div>
+            <form id="registerForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">昵称</label>
+                    <input type="text" id="registerNickname" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                    <input type="email" id="registerEmail" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                    <input type="password" id="registerPassword" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                </div>
+                <button type="submit" class="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">注册</button>
+            </form>
+            <p class="mt-6 text-center text-sm text-gray-600">已有账号？<button onclick="hideModal('registerModal'); showModal('loginModal');" class="text-primary hover:underline">立即登录</button></p>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-sm text-gray-400">© 2026 听见你的声音</div>
+        </div>
+    </footer>
+
+    <script>
+        let currentUser = null;
+        let currentWork = null;
+        let works = [];
+        let currentCategory = 'all';
+        let currentSort = 'newest';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkSession();
+            await loadAllData();
+            initUpload();
+            initForms();
+            renderWorks();
+            renderRankingPreview();
+        });
+
+        // 检查登录状态
+        async function checkSession() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                currentUser = {
+                    id: user.id,
+                    email: user.email,
+                    nickname: profile?.nickname || user.email,
+                    avatar: profile?.avatar_url || 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q'
+                };
+                localStorage.setItem('music_platform_currentUser', JSON.stringify(currentUser));
+            } else {
+                currentUser = null;
+                localStorage.removeItem('music_platform_currentUser');
+            }
+            checkLoginStatus();
+        }
+
+        function checkLoginStatus() {
+            if (currentUser) {
+                document.getElementById('guestButtons').classList.add('hidden');
+                document.getElementById('userMenu').classList.remove('hidden');
+                document.getElementById('navUserName').innerText = currentUser.nickname;
+                document.getElementById('navUserAvatar').src = currentUser.avatar;
+            } else {
+                document.getElementById('guestButtons').classList.remove('hidden');
+                document.getElementById('userMenu').classList.add('hidden');
+            }
+        }
+
+        // 加载所有作品
+        async function loadAllData() {
+            let query = supabase.from('works').select('*, profiles(nickname, avatar_url)');
+            if (currentCategory !== 'all') {
+                query = query.eq('category', currentCategory);
+            }
+            if (currentSort === 'hot') {
+                query = query.order('play_count', { ascending: false });
+            } else if (currentSort === 'comment') {
+                query = query.order('comment_count', { ascending: false });
+            } else {
+                query = query.order('created_at', { ascending: false });
+            }
+            const { data } = await query;
+            works = data || [];
+        }
+
+        // 渲染作品列表
+        function renderWorks() {
+            const grid = document.getElementById('worksGrid');
+            const empty = document.getElementById('emptyWorks');
+            const list = works.filter(w => w.is_public === true);
+            if (!list.length) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+            grid.innerHTML = list.map(w => `
+                <div class="bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer" onclick="openWorkDetail(${w.id})">
+                    <div class="relative">
+                        <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-full h-48 object-cover rounded-t-xl">
+                        <div class="absolute bottom-2 right-2 w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center text-white">
+                            <i class="fa fa-play"></i>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-medium truncate">${escapeHtml(w.name)}</h3>
+                        <p class="text-sm text-gray-500">${escapeHtml(w.profiles?.nickname || '未知')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 打开作品详情
+        async function openWorkDetail(workId) {
+            const work = works.find(w => w.id === workId);
+            if (!work) return;
+            currentWork = work;
+            document.getElementById('detailTitle').textContent = work.name;
+            document.getElementById('detailProducerName').textContent = work.profiles?.nickname || '未知';
+            document.getElementById('detailInspiration').textContent = work.inspiration;
+            document.getElementById('audioPlayer').src = work.file_url;
+            document.getElementById('detailPlayCount').textContent = work.play_count;
+            document.getElementById('detailCommentCount').textContent = work.comment_count;
+            // 增加播放计数
+            await supabase.rpc('increment_play_count', { work_id: work.id });
+            work.play_count++;
+            // 加载评论
+            await loadComments(work.id);
+            showPage('workDetail');
+        }
+
+        // 加载评论
+        async function loadComments(workId) {
+            const { data } = await supabase
+                .from('comments')
+                .select('*, profiles(nickname, avatar_url)')
+                .eq('work_id', workId)
+                .order('created_at', { ascending: false });
+            const container = document.getElementById('commentsList');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">暂无评论，快来抢沙发吧~</p>';
+                return;
+            }
+            container.innerHTML = data.map(c => `
+                <div class="flex gap-3">
+                    <img src="${c.profiles?.avatar_url || 'https://aka.doubaocdn.com/s/2Pjs1wGJ9Q'}" class="w-10 h-10 rounded-full">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-medium">${escapeHtml(c.profiles?.nickname || '匿名')}</span>
+                            <span class="text-xs text-gray-400">${new Date(c.created_at).toLocaleString()}</span>
+                        </div>
+                        <p class="text-gray-700 mt-1">${escapeHtml(c.content)}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 提交评论
+        async function submitComment() {
+            if (!currentUser) return alert('请先登录');
+            const content = document.getElementById('newComment').value.trim();
+            if (!content) return alert('评论内容不能为空');
+            const { error } = await supabase.from('comments').insert({
+                work_id: currentWork.id,
+                user_id: currentUser.id,
+                content: content
+            });
+            if (error) {
+                alert('评论失败：' + error.message);
+                return;
+            }
+            // 更新作品评论数
+            await supabase.rpc('increment_comment_count', { work_id: currentWork.id });
+            currentWork.comment_count++;
+            document.getElementById('detailCommentCount').textContent = currentWork.comment_count;
+            document.getElementById('newComment').value = '';
+            await loadComments(currentWork.id);
+            alert('评论成功');
+        }
+
+        // 排行榜预览
+        async function renderRankingPreview() {
+            const { data } = await supabase
+                .from('works')
+                .select('*, profiles(nickname)')
+                .order('play_count', { ascending: false })
+                .limit(5);
+            const container = document.getElementById('rankingPreview');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">暂无数据</p>';
+                return;
+            }
+            container.innerHTML = data.map((w, idx) => `
+                <div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer" onclick="openWorkDetail(${w.id})">
+                    <span class="w-6 text-center font-bold ${idx < 3 ? 'text-primary' : 'text-gray-400'}">${idx+1}</span>
+                    <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-10 h-10 rounded object-cover">
+                    <div class="flex-1">
+                        <p class="text-sm font-medium truncate">${escapeHtml(w.name)}</p>
+                        <p class="text-xs text-gray-500">${escapeHtml(w.profiles?.nickname || '未知')}</p>
+                    </div>
+                    <span class="text-xs text-gray-400">${w.play_count}次播放</span>
+                </div>
+            `).join('');
+        }
+
+        // 完整排行榜页
+        async function renderFullRanking() {
+            const { data } = await supabase
+                .from('works')
+                .select('*, profiles(nickname)')
+                .order('play_count', { ascending: false });
+            const container = document.getElementById('rankingList');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">暂无作品</p>';
+                return;
+            }
+            container.innerHTML = data.map((w, idx) => `
+                <div class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-4 cursor-pointer hover:shadow-md" onclick="openWorkDetail(${w.id})">
+                    <div class="w-12 text-center">
+                        <span class="text-2xl font-bold ${idx < 3 ? 'text-primary' : 'text-gray-400'}">${idx+1}</span>
+                    </div>
+                    <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-16 h-16 rounded object-cover">
+                    <div class="flex-1">
+                        <h3 class="font-bold">${escapeHtml(w.name)}</h3>
+                        <p class="text-sm text-gray-500">${escapeHtml(w.profiles?.nickname || '未知')}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">${w.play_count} 播放</p>
+                        <p class="text-sm text-gray-500">${w.comment_count} 评论</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 我的作品
+        async function loadMyWorks() {
+            if (!currentUser) {
+                alert('请先登录');
+                showPage('home');
+                return;
+            }
+            const { data } = await supabase
+                .from('works')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+            const container = document.getElementById('myWorksGrid');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">你还没有上传过作品</p>';
+                return;
+            }
+            container.innerHTML = data.map(w => `
+                <div class="bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer" onclick="openWorkDetail(${w.id})">
+                    <div class="relative">
+                        <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-full h-48 object-cover rounded-t-xl">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-medium truncate">${escapeHtml(w.name)}</h3>
+                        <p class="text-sm text-gray-500">${new Date(w.created_at).toLocaleDateString()}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 个人中心加载资料
+        async function loadProfile() {
+            if (!currentUser) return;
+            document.getElementById('profileAvatar').src = currentUser.avatar;
+            document.getElementById('profileNickname').textContent = currentUser.nickname;
+            document.getElementById('profileEmail').textContent = currentUser.email;
+            document.getElementById('editNickname').value = currentUser.nickname;
+        }
+
+        async function updateProfile() {
+            const newNickname = document.getElementById('editNickname').value.trim();
+            if (!newNickname) return alert('昵称不能为空');
+            const { error } = await supabase
+                .from('profiles')
+                .update({ nickname: newNickname })
+                .eq('id', currentUser.id);
+            if (error) {
+                alert('更新失败：' + error.message);
+                return;
+            }
+            currentUser.nickname = newNickname;
+            localStorage.setItem('music_platform_currentUser', JSON.stringify(currentUser));
+            checkLoginStatus();
+            alert('更新成功');
+            loadProfile();
+        }
+
+        // 上传作品
+        function initUpload() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            dropZone.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                if (fileInput.files.length) {
+                    dropZone.classList.add('border-primary');
+                }
+            };
+        }
+
+        // 表单提交处理
+        function initForms() {
+            document.getElementById('loginForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) return alert('登录失败：' + error.message);
+                await checkSession();
+                hideModal('loginModal');
+                alert('登录成功');
+                await loadAllData();
+                renderWorks();
+            };
+
+            document.getElementById('registerForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const nickname = document.getElementById('registerNickname').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) return alert('注册失败：' + error.message);
+                // 自动插入 profile
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert({ id: data.user.id, nickname: nickname });
+                if (profileError) console.error('profile插入失败', profileError);
+                alert('注册成功，请登录');
+                hideModal('registerModal');
+                showModal('loginModal');
+            };
+
+            document.getElementById('uploadForm').onsubmit = async (e) => {
+                e.preventDefault();
+                if (!currentUser) return alert('请先登录');
+                const file = document.getElementById('fileInput').files[0];
+                if (!file) return alert('请选择音频文件');
+                const fileName = `${currentUser.id}/${Date.now()}_${file.name}`;
+                const { error: uploadError } = await supabase.storage
+                    .from('music-files')
+                    .upload(fileName, file);
+                if (uploadError) return alert('上传失败：' + uploadError.message);
+                const { data: { publicUrl } } = supabase.storage
+                    .from('music-files')
+                    .getPublicUrl(fileName);
+                const work = {
+                    user_id: currentUser.id,
+                    name: document.getElementById('workName').value,
+                    category: document.getElementById('workCategory').value,
+                    inspiration: document.getElementById('workInspiration').value,
+                    file_url: publicUrl,
+                    is_public: true,
+                    play_count: 0,
+                    comment_count: 0
+                };
+                const { error: insertError } = await supabase.from('works').insert([work]);
+                if (insertError) return alert('保存失败：' + insertError.message);
+                alert('上传成功！');
+                showPage('home');
+                await loadAllData();
+                renderWorks();
+            };
+        }
+
+        // 辅助函数
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // 页面切换
+        function showPage(page) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(page + 'Page').classList.remove('hidden');
+            if (page === 'ranking') renderFullRanking();
+            if (page === 'profile') loadProfile();
+            if (page === 'myWorks') loadMyWorks();
+        }
+
+        function filterWorks(category) {
+            currentCategory = category;
+            loadAllData().then(() => renderWorks());
+            // 更新按钮样式
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            });
+            event.target.classList.add('bg-primary', 'text-white');
+        }
+
+        function sortWorks(type) {
+            currentSort = type;
+            loadAllData().then(() => renderWorks());
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            });
+            event.target.classList.add('bg-primary', 'text-white');
+        }
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function goBack() { showPage('home'); }
+        function switchDetailTab(tab) {
+            document.getElementById('detailInfoTab').classList.toggle('hidden', tab !== 'info');
+            document.getElementById('detailCommentsTab').classList.toggle('hidden', tab !== 'comments');
+        }
+        async function logout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            localStorage.removeItem('music_platform_currentUser');
+            checkLoginStatus();
+            showPage('home');
+            await loadAllData();
+            renderWorks();
+        }
+        function toggleUserDropdown() { document.getElementById('userDropdown').classList.toggle('hidden'); }
+        function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
+    </script>
+</body>
+</html>
