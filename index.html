@@ -10,8 +10,7 @@
     <script>
         const SUPABASE_URL = 'https://fhydtrtfomgjfobsyaup.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_d1bWLFbm-JTFJV2yuptVfg_qSvCG6z4';
-        const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        window.supabase = client;
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </script>
     <script>
         tailwind.config = {
@@ -549,13 +548,10 @@
                         <p class="text-sm font-medium truncate">${escapeHtml(w.name)}</p>
                         <p class="text-xs text-gray-500">${escapeHtml(w.profiles?.nickname || '未知')}</p>
                     </div>
-	    <div class="text-right text-xs">
-                           <span class="text-gray-400">${w.play_count}</span> 播 /
-	           <span class="text-gray-400">${w.comment_count}</span> 评
-	    </div>
+                    <span class="text-xs text-gray-400">${w.play_count}次播放</span>
                 </div>
             `).join('');
-            }
+        }
 
         // 完整排行榜页
         async function renderFullRanking() {
@@ -570,15 +566,17 @@
             }
             container.innerHTML = data.map((w, idx) => `
                 <div class="bg-white rounded-lg shadow-sm p-4 flex items-center gap-4 cursor-pointer hover:shadow-md" onclick="openWorkDetail(${w.id})">
-                        <span class="w-6 text-center font-bold ${idx < 3 ? 'text-primary' : 'text-gray-400'}">${idx+1}</span>
-                    <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-10 h-10 rounded object-cover">
-                    <div class="flex-1">
-                        <p class="text-sm font-medium truncate">${escapeHtml(w.name)}</p>
-                        <p class="text-xs text-gray-500">${escapeHtml(w.profiles?.nickname || '未知')}</p>
+                    <div class="w-12 text-center">
+                        <span class="text-2xl font-bold ${idx < 3 ? 'text-primary' : 'text-gray-400'}">${idx+1}</span>
                     </div>
-                    <div class="text-right text-xs">
-                        <span class="text-gray-400">${w.play_count}</span> 播 /
-                        <span class="text-gray-400">${w.comment_count}</span> 评
+                    <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-16 h-16 rounded object-cover">
+                    <div class="flex-1">
+                        <h3 class="font-bold">${escapeHtml(w.name)}</h3>
+                        <p class="text-sm text-gray-500">${escapeHtml(w.profiles?.nickname || '未知')}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">${w.play_count} 播放</p>
+                        <p class="text-sm text-gray-500">${w.comment_count} 评论</p>
                     </div>
                 </div>
             `).join('');
@@ -602,7 +600,13 @@
                 return;
             }
             container.innerHTML = data.map(w => `
-                <div class="bg-white rounded-xl shadow-sm hover:shadow-md cursor-pointer" onclick="openWorkDetail(${w.id})">
+                <div class="bg-white rounded-xl shadow-sm hover:shadow-md relative group"> <!-- 添加 relative 和 group -->
+	    <!-- 删除按钮 (默认隐藏，hover时显示) -->
+    	    <button onclick="deleteWork(${w.id}, event)" class="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:scale-110 z-10">
+	        <i class="fa fa-trash text-xs"></i>
+	    </button>
+	    <!-- 原有的作品内容 -->
+	    <div class="cursor-pointer" onclick="openWorkDetail(${w.id})">
                     <div class="relative">
                         <img src="${w.cover_url || 'https://aka.doubaocdn.com/s/ygh51wGJ9P'}" class="w-full h-48 object-cover rounded-t-xl">
                     </div>
@@ -611,6 +615,7 @@
                         <p class="text-sm text-gray-500">${new Date(w.created_at).toLocaleDateString()}</p>
                     </div>
                 </div>
+              </div>
             `).join('');
         }
 
@@ -776,6 +781,50 @@
         }
         function toggleUserDropdown() { document.getElementById('userDropdown').classList.toggle('hidden'); }
         function toggleMobileMenu() { document.getElementById('mobileMenu').classList.toggle('hidden'); }
+
+        // 删除作品函数 (包含 Storage 文件和 Database 记录的双重删除)
+        async function deleteWork(workId, event) {
+           event.stopPropagation(); // 阻止冒泡，防止点删除时也打开详情页
+           if (!confirm('确定要删除这首作品吗？此操作不可恢复！')) return;
+           try {
+             const { data: workData, error: fetchError } = await supabase
+                .from('works')
+                .select('file_url')
+                .eq('id', workId)
+                .single();
+             if (fetchError) throw new Error('查询失败: ' + fetchError.message);
+               
+    // 2. 解析文件路径 (把 URL 转成 Storage 路径)
+    // 假设 URL 是: https://xxx.supabase.co/storage/v1/object/public/music-files/xxx.mp3
+             const filePath = workData.file_url.split('/public/')[1]; // 直接截取最后面的路径部分
+             if (!filePath) throw new Error('路径解析错误');
+
+    // 3. 删除 Storage 里的音频文件
+             const { error: storageError } = await supabase
+                .storage
+                .from('music-files') // 这里的名字必须和你创建 Bucket 的名字一致
+                .remove([filePath]);
+
+    // 4. 删除 Database 里的记录
+             const { error: dbError } = await supabase
+                .from('works')
+                .delete()
+                .eq('id', workId)
+                .eq('user_id', currentUser.id); // 安全校验
+
+             if (dbError) throw new Error('数据库删除失败: ' + dbError.message);
+
+             alert('删除成功！');
+    // 刷新页面数据
+             loadMyWorks();
+             loadAllData();
+             renderWorks();
+
+           } catch (error) {
+             console.error('删除出错:', error);
+             alert('删除失败: ' + error.message);
+           }
+        }
     </script>
 </body>
 </html>
