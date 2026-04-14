@@ -10,7 +10,7 @@
     <script>
         const SUPABASE_URL = 'https://fhydtrtfomgjfobsyaup.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_d1bWLFbm-JTFJV2yuptVfg_qSvCG6z4';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     </script>
     <script>
         tailwind.config = {
